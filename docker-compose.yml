@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: novora-crm-db
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: novora_crm
+    volumes:
+      - novora_crm_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d novora_crm']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: novora-crm-api
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    environment:
+      PORT: '4000'
+      # Local Docker Postgres. For Neon, override DATABASE_URL (and user/password).
+      DATABASE_URL: jdbc:postgresql://postgres:5432/novora_crm
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      CORS_ORIGIN: http://localhost:5173,http://localhost:5174
+      JWT_ACCESS_SECRET: change-me-access-secret-min-32-chars!!
+      JWT_REFRESH_SECRET: change-me-refresh-secret-min-32-chars!
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      STORAGE_DIR: /data/uploads
+      # Read from backend/.env by Docker Compose; leave unset to log emails instead of sending them.
+      GMAIL_USERNAME: ${GMAIL_USERNAME:-}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Novora CRM}
+      APP_URL: ${APP_URL:-http://localhost:5173}
+      SEED_DEMO_ADMIN: 'true'
+    volumes:
+      - novora_crm_uploads:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  novora_crm_pgdata:
+  novora_crm_uploads:

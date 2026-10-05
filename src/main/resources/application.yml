@@ -1,0 +1,31 @@
+server.port: ${PORT:4000}
+spring.application.name: novora-crm-api
+spring.datasource.url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/novora_crm}
+spring.datasource.username: ${DATABASE_USER:postgres}
+spring.datasource.password: ${DATABASE_PASSWORD:postgres}
+# Also support full JDBC URL with user/pass in URL for Neon
+spring.jpa.hibernate.ddl-auto: validate
+spring.jpa.open-in-view: false
+spring.jpa.properties.hibernate.jdbc.time_zone: UTC
+spring.flyway.enabled: true
+novora.cors-origin: ${CORS_ORIGIN:http://localhost:5173}
+novora.api-prefix: /api/v1
+# No defaults on purpose: the API refuses to start until real secrets are set (see .env.example).
+novora.jwt.access-secret: ${JWT_ACCESS_SECRET}
+novora.jwt.refresh-secret: ${JWT_REFRESH_SECRET}
+novora.jwt.access-expires: ${JWT_ACCESS_EXPIRES_IN:15m}
+novora.jwt.refresh-expires: ${JWT_REFRESH_EXPIRES_IN:7d}
+spring.servlet.multipart.max-file-size: 10MB
+spring.servlet.multipart.max-request-size: 11MB
+novora.storage.dir: ${STORAGE_DIR:./data/uploads}
+server.tomcat.max-swallow-size: 50MB
+# Email is sent through Gmail SMTP. Put GMAIL_USERNAME and GMAIL_APP_PASSWORD in backend/.env (never commit it).
+# Without them, emails are written to the API log instead of being sent.
+novora.mail.host: ${MAIL_HOST:smtp.gmail.com}
+novora.mail.port: ${MAIL_PORT:587}
+novora.mail.username: ${GMAIL_USERNAME:}
+novora.mail.password: ${GMAIL_APP_PASSWORD:}
+novora.mail.from-name: ${MAIL_FROM_NAME:Novora CRM}
+novora.app-url: ${APP_URL:http://localhost:5173}
+# Creates admin@novora.local / password123 on startup. Local development only — never enable in production.
+novora.seed-demo-admin: ${SEED_DEMO_ADMIN:false}
