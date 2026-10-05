@@ -25,6 +25,11 @@ public class DataSourceConfig {
 		String password = properties.getPassword();
 		String driver;
 
+		// pgjdbc rejects user:password@ in a jdbc: URL, so treat that form like a plain postgresql:// URI
+		if (url != null && url.startsWith("jdbc:postgresql://") && hasUserInfo(url.substring("jdbc:postgresql://".length()))) {
+			url = url.substring("jdbc:".length());
+		}
+
 		if (url != null && (url.startsWith("postgresql://") || url.startsWith("postgres://"))) {
 			driver = "org.postgresql.Driver";
 			ParsedJdbc parsed = parsePostgresUri(url);
@@ -46,6 +51,12 @@ public class DataSourceConfig {
 				.username(username)
 				.password(password)
 				.build();
+	}
+
+	private static boolean hasUserInfo(String afterScheme) {
+		int slash = afterScheme.indexOf('/');
+		String authority = slash < 0 ? afterScheme : afterScheme.substring(0, slash);
+		return authority.contains("@");
 	}
 
 	static ParsedJdbc parsePostgresUri(String uriString) {
