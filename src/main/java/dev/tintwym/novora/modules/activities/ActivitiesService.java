@@ -60,10 +60,11 @@ public class ActivitiesService {
 
 	@Transactional(readOnly = true)
 	public List<Map<String, Object>> list(UserPrincipal user, String type, String contactId, String dealId,
-			Boolean completed, Integer limit) {
+			Boolean completed, Boolean mine, Integer limit) {
 		ActivityType t = type == null || type.isBlank() ? null : ActivityType.valueOf(type);
 		int take = Math.min(limit == null ? 100 : limit, 200);
-		return activities.filter(user.getCompanyId(), t, emptyToNull(contactId), emptyToNull(dealId), completed,
+		String userId = Boolean.TRUE.equals(mine) ? user.getId() : null;
+		return activities.filter(user.getCompanyId(), t, emptyToNull(contactId), emptyToNull(dealId), completed, userId,
 				PageRequest.of(0, take)).stream().map(this::toDto).toList();
 	}
 
@@ -96,6 +97,8 @@ public class ActivitiesService {
 		if (body.containsKey("completed")) {
 			boolean completed = Boolean.parseBoolean(String.valueOf(body.get("completed")));
 			a.setCompletedAt(completed ? Instant.now() : null);
+			// Reopening a task allows a fresh reminder cycle.
+			if (!completed) a.setReminderEmailSentAt(null);
 		}
 		activities.save(a);
 		return toDto(a);
@@ -138,8 +141,8 @@ public class ActivitiesService {
 		Instant now = Instant.now();
 		Instant soon = now.plusSeconds(48 * 3600);
 		return activities
-				.findByCompanyIdAndCompletedAtIsNullAndDueAtIsNotNullAndDueAtLessThanEqualOrderByDueAtAsc(
-						user.getCompanyId(), soon, PageRequest.of(0, 50))
+				.findByCompanyIdAndUserIdAndCompletedAtIsNullAndDueAtIsNotNullAndDueAtLessThanEqualOrderByDueAtAsc(
+						user.getCompanyId(), user.getId(), soon, PageRequest.of(0, 50))
 				.stream()
 				.map(a -> {
 					Map<String, Object> dto = toDto(a);

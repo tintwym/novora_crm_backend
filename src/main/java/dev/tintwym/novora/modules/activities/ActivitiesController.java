@@ -55,8 +55,10 @@ public class ActivitiesController {
 			@RequestParam(required = false) String contactId,
 			@RequestParam(required = false) String dealId,
 			@RequestParam(required = false) Boolean completed,
+			@RequestParam(required = false) Boolean mine,
 			@RequestParam(required = false) Integer limit) {
-		return ApiResponse.success(service.list(SecurityUtils.currentUser(), type, contactId, dealId, completed, limit));
+		return ApiResponse.success(
+				service.list(SecurityUtils.currentUser(), type, contactId, dealId, completed, mine, limit));
 	}
 
 	@GetMapping("/{id}")

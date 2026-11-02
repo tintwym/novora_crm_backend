@@ -12,5 +12,7 @@ public interface ContactRepository extends JpaRepository<Contact, String> {
 	List<Contact> findByCompanyIdOrderByUpdatedAtDesc(String companyId);
 	List<Contact> findByCompanyIdAndAccountIdOrderByUpdatedAtDesc(String companyId, String accountId);
 	Optional<Contact> findFirstByCompanyIdAndEmailIgnoreCase(String companyId, String email);
+
+	Optional<Contact> findFirstByCompanyIdAndNameIgnoreCase(String companyId, String name);
 	long countByAccountId(String accountId);
 }

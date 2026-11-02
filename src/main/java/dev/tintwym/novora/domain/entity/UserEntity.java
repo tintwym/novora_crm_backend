@@ -44,6 +44,18 @@ public class UserEntity {
 	@Column(name = "is_active", nullable = false)
 	private boolean active = true;
 
+	@Column(name = "hrms_employee_id")
+	private String hrmsEmployeeId;
+
+	@Column(name = "hrms_synced_at")
+	private Instant hrmsSyncedAt;
+
+	@Column(name = "hrms_provisioned", nullable = false)
+	private boolean hrmsProvisioned;
+
+	@Column(name = "hrms_deactivated", nullable = false)
+	private boolean hrmsDeactivated;
+
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
 
@@ -119,6 +131,38 @@ public class UserEntity {
 
 	public void setActive(boolean active) {
 		this.active = active;
+	}
+
+	public String getHrmsEmployeeId() {
+		return hrmsEmployeeId;
+	}
+
+	public void setHrmsEmployeeId(String hrmsEmployeeId) {
+		this.hrmsEmployeeId = hrmsEmployeeId;
+	}
+
+	public Instant getHrmsSyncedAt() {
+		return hrmsSyncedAt;
+	}
+
+	public void setHrmsSyncedAt(Instant hrmsSyncedAt) {
+		this.hrmsSyncedAt = hrmsSyncedAt;
+	}
+
+	public boolean isHrmsProvisioned() {
+		return hrmsProvisioned;
+	}
+
+	public void setHrmsProvisioned(boolean hrmsProvisioned) {
+		this.hrmsProvisioned = hrmsProvisioned;
+	}
+
+	public boolean isHrmsDeactivated() {
+		return hrmsDeactivated;
+	}
+
+	public void setHrmsDeactivated(boolean hrmsDeactivated) {
+		this.hrmsDeactivated = hrmsDeactivated;
 	}
 
 	public Instant getCreatedAt() {

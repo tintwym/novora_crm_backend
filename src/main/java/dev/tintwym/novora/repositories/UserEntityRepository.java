@@ -12,4 +12,8 @@ public interface UserEntityRepository extends JpaRepository<UserEntity, String> 
 	boolean existsByEmailIgnoreCase(String email);
 	Optional<UserEntity> findByIdAndCompanyId(String id, String companyId);
 	List<UserEntity> findByCompanyId(String companyId);
+
+	Optional<UserEntity> findByCompanyIdAndHrmsEmployeeId(String companyId, String hrmsEmployeeId);
+
+	long countByCompanyIdAndHrmsEmployeeIdIsNotNull(String companyId);
 }

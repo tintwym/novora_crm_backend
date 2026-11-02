@@ -49,6 +49,12 @@ public class CompaniesController {
 				.body(ApiResponse.success(service.create(SecurityUtils.currentUser(), body)));
 	}
 
+	@PostMapping("/import")
+	@RequiresPermission(Permission.IMPORT_COMPANIES)
+	public ApiResponse<Map<String, Object>> importCsv(@RequestBody Map<String, Object> body) {
+		return ApiResponse.success(service.importCompanies(SecurityUtils.currentUser(), body));
+	}
+
 	@PatchMapping("/{id}")
 	@RequiresPermission(Permission.MANAGE_COMPANIES)
 	public ApiResponse<Map<String, Object>> update(@PathVariable String id, @RequestBody Map<String, Object> body) {

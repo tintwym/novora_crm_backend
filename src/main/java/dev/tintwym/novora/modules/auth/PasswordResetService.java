@@ -94,15 +94,21 @@ public class PasswordResetService {
 	/** Creates an invite link for a new teammate and emails it. Returns the link for display when email is off. */
 	@Transactional
 	public Map<String, Object> invite(UserPrincipal actor, UserEntity user) {
+		return invite(actor.getName(), user);
+	}
+
+	/** Same as {@link #invite(UserPrincipal, UserEntity)} for invites with no signed-in sender, e.g. "Your HR team". */
+	@Transactional
+	public Map<String, Object> invite(String inviterName, UserEntity user) {
 		String link = email.appUrl() + "/reset-password?token=" + issue(user.getId(), INVITE, INVITE_TTL);
 		String workspace = companies.findById(user.getCompanyId()).map(c -> c.getName()).orElse("Novora CRM");
 		String name = firstName(user.getName());
-		email.sendLater(new EmailService.Email(user.getEmail(), actor.getName() + " invited you to " + workspace,
-				"Hi " + name + ",\n\n" + actor.getName() + " invited you to join " + workspace + " on Novora CRM.\n"
+		email.sendLater(new EmailService.Email(user.getEmail(), inviterName + " invited you to " + workspace,
+				"Hi " + name + ",\n\n" + inviterName + " invited you to join " + workspace + " on Novora CRM.\n"
 						+ "Open this link within 7 days to set your password:\n" + link
 						+ "\n\nYou'll sign in with " + user.getEmail() + ".",
 				email.layout("You're invited to " + workspace, List.of("Hi " + name + ",",
-						actor.getName() + " invited you to join " + workspace + " on Novora CRM.",
+						inviterName + " invited you to join " + workspace + " on Novora CRM.",
 						"Set a password to get started. You'll sign in with " + user.getEmail()
 								+ ". The link works for 7 days."),
 						"Set your password", link)));
