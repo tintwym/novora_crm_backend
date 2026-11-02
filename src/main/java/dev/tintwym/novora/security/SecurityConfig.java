@@ -21,6 +21,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import dev.tintwym.novora.common.ApiResponse;
 import dev.tintwym.novora.config.NovoraProperties;
+import dev.tintwym.novora.modules.integrations.hrms.HrmsIntegrationController;
 
 import tools.jackson.databind.json.JsonMapper;
 
@@ -50,6 +51,8 @@ public class SecurityConfig {
 								"/api/v1/auth/reset-password")
 						.permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/auth/reset-password").permitAll()
+						// Server-to-server from Novora HRMS; the controller verifies the request signature.
+						.requestMatchers(HttpMethod.POST, HrmsIntegrationController.EVENTS_PATH).permitAll()
 						.requestMatchers("/api/v1/portal/**").permitAll()
 						.anyRequest().authenticated())
 				.exceptionHandling(ex -> ex

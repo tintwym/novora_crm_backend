@@ -164,6 +164,7 @@ public class UsersService {
 				"role", user.getRole().name(),
 				"companyId", user.getCompanyId(),
 				"isActive", user.isActive(),
+				"hrmsLinked", user.getHrmsEmployeeId() != null,
 				"createdAt", JsonMaps.iso(user.getCreatedAt()),
 				"updatedAt", JsonMaps.iso(user.getUpdatedAt()));
 	}

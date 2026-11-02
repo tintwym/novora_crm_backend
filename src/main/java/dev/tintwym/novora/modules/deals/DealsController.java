@@ -64,6 +64,12 @@ public class DealsController {
 				.body(ApiResponse.success(service.create(SecurityUtils.currentUser(), body)));
 	}
 
+	@PostMapping("/import")
+	@RequiresPermission(Permission.IMPORT_DEALS)
+	public ApiResponse<Map<String, Object>> importCsv(@RequestBody Map<String, Object> body) {
+		return ApiResponse.success(service.importDeals(SecurityUtils.currentUser(), body));
+	}
+
 	@PatchMapping("/{id}")
 	@RequiresPermission(Permission.MANAGE_DEALS)
 	public ApiResponse<Map<String, Object>> update(@PathVariable String id, @RequestBody Map<String, Object> body) {

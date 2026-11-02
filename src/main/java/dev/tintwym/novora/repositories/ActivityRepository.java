@@ -38,8 +38,14 @@ public interface ActivityRepository extends JpaRepository<Activity, String>, Jpa
 	 * Optional filters are applied only when non-null so PostgreSQL never sees
 	 * untyped {@code ? IS NULL} binds (which break for enums/booleans).
 	 */
+	List<Activity> findByCompanyIdAndUserIdAndCompletedAtIsNullAndDueAtIsNotNullAndDueAtLessThanEqualOrderByDueAtAsc(
+			String companyId, String userId, Instant dueAt, Pageable pageable);
+
+	List<Activity> findByCompletedAtIsNullAndDueAtIsNotNullAndReminderEmailSentAtIsNullAndDueAtLessThanEqualOrderByDueAtAsc(
+			Instant dueAt, Pageable pageable);
+
 	default List<Activity> filter(String companyId, ActivityType type, String contactId, String dealId,
-			Boolean completed, Pageable pageable) {
+			Boolean completed, String userId, Pageable pageable) {
 		Specification<Activity> spec = (root, query, cb) -> {
 			List<Predicate> predicates = new ArrayList<>();
 			predicates.add(cb.equal(root.get("companyId"), companyId));
@@ -51,6 +57,9 @@ public interface ActivityRepository extends JpaRepository<Activity, String>, Jpa
 			}
 			if (dealId != null) {
 				predicates.add(cb.equal(root.get("dealId"), dealId));
+			}
+			if (userId != null) {
+				predicates.add(cb.equal(root.get("userId"), userId));
 			}
 			if (completed != null) {
 				if (completed) {

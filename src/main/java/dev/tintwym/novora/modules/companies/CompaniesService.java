@@ -1,8 +1,11 @@
 package dev.tintwym.novora.modules.companies;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -111,6 +114,55 @@ public class CompaniesService {
 				.orElseThrow(() -> new AppException("Company not found", HttpStatus.NOT_FOUND));
 		accounts.delete(a);
 		audit.deleted(user, "COMPANY", a.getId(), a.getName());
+	}
+
+	@SuppressWarnings("unchecked")
+	@Transactional
+	public Map<String, Object> importCompanies(UserPrincipal user, Map<String, Object> body) {
+		Object raw = body.get("companies");
+		if (!(raw instanceof List<?> rows)) {
+			throw new AppException("companies is required", HttpStatus.BAD_REQUEST);
+		}
+		List<String> created = new ArrayList<>();
+		List<Map<String, Object>> errors = new ArrayList<>();
+		List<Map<String, Object>> skipped = new ArrayList<>();
+		boolean skipDuplicates = !Boolean.FALSE.equals(body.get("skipDuplicates"));
+		Set<String> seen = new HashSet<>();
+		if (skipDuplicates) {
+			accounts.findByCompanyIdOrderByNameAsc(user.getCompanyId())
+					.forEach(a -> seen.add(a.getName().trim().toLowerCase(Locale.ROOT)));
+		}
+		for (int i = 0; i < rows.size(); i++) {
+			try {
+				Map<String, Object> row = (Map<String, Object>) rows.get(i);
+				String name = req(row, "name");
+				String key = name.toLowerCase(Locale.ROOT);
+				if (skipDuplicates && seen.contains(key)) {
+					skipped.add(JsonMaps.of("row", i + 1, "name", name, "reason", "Same name as an existing company"));
+					continue;
+				}
+				CrmAccount a = new CrmAccount();
+				a.setName(name);
+				a.setIndustry(emptyToNull(opt(row, "industry")));
+				a.setSize(emptyToNull(opt(row, "size")));
+				a.setWebsite(emptyToNull(opt(row, "website")));
+				a.setPhone(emptyToNull(opt(row, "phone")));
+				a.setEmail(emptyToNull(opt(row, "email")));
+				a.setOwnerId(user.getId());
+				a.setCompanyId(user.getCompanyId());
+				accounts.save(a);
+				created.add(a.getId());
+				seen.add(key);
+			} catch (Exception ex) {
+				errors.add(JsonMaps.of("row", i + 1, "message", ex.getMessage() != null ? ex.getMessage() : "Failed"));
+			}
+		}
+		if (!created.isEmpty()) {
+			audit.record(user, "IMPORT", "COMPANY", null,
+					created.size() + (created.size() == 1 ? " company" : " companies"),
+					JsonMaps.of("imported", created.size(), "skipped", skipped.size(), "failed", errors.size()));
+		}
+		return JsonMaps.of("imported", created.size(), "createdIds", created, "errors", errors, "skipped", skipped);
 	}
 
 	private String ensureOwner(UserPrincipal user, String ownerId) {

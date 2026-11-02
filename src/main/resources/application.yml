@@ -27,5 +27,13 @@ novora.mail.username: ${GMAIL_USERNAME:}
 novora.mail.password: ${GMAIL_APP_PASSWORD:}
 novora.mail.from-name: ${MAIL_FROM_NAME:Novora CRM}
 novora.app-url: ${APP_URL:http://localhost:5173}
+# Novora HRMS connection. Off unless all three are set; the secret must match CRM_INTEGRATION_SECRET on the HRMS
+# server and be at least 32 characters.
+novora.hrms.enabled: ${HRMS_SYNC_ENABLED:false}
+novora.hrms.base-url: ${HRMS_BASE_URL:}
+novora.hrms.integration-secret: ${HRMS_INTEGRATION_SECRET:}
+# Task due-date emails (uses Gmail settings above; logs instead when email is off).
+novora.activities.reminder-cron: ${ACTIVITY_REMINDER_CRON:0 */15 * * * *}
+novora.activities.reminder-lead-hours: ${ACTIVITY_REMINDER_LEAD_HOURS:24}
 # Creates admin@novora.local / password123 on startup. Local development only — never enable in production.
 novora.seed-demo-admin: ${SEED_DEMO_ADMIN:false}

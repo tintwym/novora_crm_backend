@@ -6,8 +6,10 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -134,7 +136,7 @@ public class DealsService {
 	@Transactional
 	public Map<String, Object> create(UserPrincipal user, Map<String, Object> body) {
 		ensureRefs(user, opt(body, "contactId"), opt(body, "accountId"));
-		DealStage stage = body.get("stage") != null ? DealStage.valueOf(String.valueOf(body.get("stage"))) : DealStage.LEAD;
+		DealStage stage = body.get("stage") != null ? parseStage(String.valueOf(body.get("stage"))) : DealStage.LEAD;
 		Deal d = new Deal();
 		d.setTitle(req(body, "title"));
 		d.setValue(asDecimal(body.get("value"), BigDecimal.ZERO));
@@ -158,6 +160,86 @@ public class DealsService {
 		audit.created(user, "DEAL", d.getId(), d.getTitle());
 		dto.put("automationTasks", automations.onStageEntered(user, d, stage));
 		return dto;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Transactional
+	public Map<String, Object> importDeals(UserPrincipal user, Map<String, Object> body) {
+		Object raw = body.get("deals");
+		if (!(raw instanceof List<?> rows)) {
+			throw new AppException("deals is required", HttpStatus.BAD_REQUEST);
+		}
+		List<String> created = new ArrayList<>();
+		List<Map<String, Object>> errors = new ArrayList<>();
+		List<Map<String, Object>> skipped = new ArrayList<>();
+		boolean skipDuplicates = !Boolean.FALSE.equals(body.get("skipDuplicates"));
+		Set<String> seen = new HashSet<>();
+		if (skipDuplicates) {
+			deals.findByCompanyIdOrderByStageAscUpdatedAtDesc(user.getCompanyId()).forEach(d -> {
+				String account = d.getAccountId() == null ? "" : d.getAccountId();
+				seen.add(d.getTitle().trim().toLowerCase(Locale.ROOT) + "|" + account);
+			});
+		}
+		for (int i = 0; i < rows.size(); i++) {
+			try {
+				Map<String, Object> row = (Map<String, Object>) rows.get(i);
+				String title = req(row, "title");
+				String accountName = emptyToNull(first(row, "accountName", "company", "account"));
+				String accountId = null;
+				if (accountName != null) {
+					accountId = accounts.findFirstByCompanyIdAndNameIgnoreCase(user.getCompanyId(), accountName)
+							.map(a -> a.getId())
+							.orElseGet(() -> {
+								var a = new dev.tintwym.novora.domain.entity.CrmAccount();
+								a.setName(accountName);
+								a.setCompanyId(user.getCompanyId());
+								a.setOwnerId(user.getId());
+								accounts.save(a);
+								return a.getId();
+							});
+				}
+				String dupKey = title.toLowerCase(Locale.ROOT) + "|" + (accountId == null ? "" : accountId);
+				if (skipDuplicates && seen.contains(dupKey)) {
+					skipped.add(JsonMaps.of("row", i + 1, "name", title,
+							"reason", "Same title and company as an existing deal"));
+					continue;
+				}
+				String contactId = null;
+				String contactEmail = emptyToNull(first(row, "contactEmail", "email"));
+				String contactName = emptyToNull(first(row, "contactName", "contact"));
+				if (contactEmail != null) {
+					contactId = contacts.findFirstByCompanyIdAndEmailIgnoreCase(user.getCompanyId(), contactEmail)
+							.map(c -> c.getId()).orElse(null);
+				}
+				if (contactId == null && contactName != null) {
+					contactId = contacts.findFirstByCompanyIdAndNameIgnoreCase(user.getCompanyId(), contactName)
+							.map(c -> c.getId()).orElse(null);
+				}
+				Map<String, Object> createBody = new LinkedHashMap<>();
+				createBody.put("title", title);
+				createBody.put("value", row.get("value"));
+				Object stageRaw = firstObj(row, "stage");
+				if (stageRaw != null) createBody.put("stage", String.valueOf(stageRaw));
+				if (row.get("probability") != null) createBody.put("probability", row.get("probability"));
+				String closeDate = emptyToNull(first(row, "closeDate", "close date", "closedate"));
+				if (closeDate != null) createBody.put("closeDate", closeDate);
+				if (accountId != null) createBody.put("accountId", accountId);
+				if (contactId != null) createBody.put("contactId", contactId);
+				Object source = firstObj(row, "source");
+				if (source != null) createBody.put("source", source);
+				Map<String, Object> dto = create(user, createBody);
+				created.add(String.valueOf(dto.get("id")));
+				seen.add(dupKey);
+			} catch (Exception ex) {
+				errors.add(JsonMaps.of("row", i + 1, "message", ex.getMessage() != null ? ex.getMessage() : "Failed"));
+			}
+		}
+		if (!created.isEmpty()) {
+			audit.record(user, "IMPORT", "DEAL", null,
+					created.size() + (created.size() == 1 ? " deal" : " deals"),
+					JsonMaps.of("imported", created.size(), "skipped", skipped.size(), "failed", errors.size()));
+		}
+		return JsonMaps.of("imported", created.size(), "createdIds", created, "errors", errors, "skipped", skipped);
 	}
 
 	@Transactional
@@ -519,6 +601,47 @@ public class DealsService {
 	private static Instant parseDate(String value) {
 		if (value == null || value.isBlank() || "null".equals(value)) return null;
 		return Instant.parse(value.contains("T") ? value : value + "T00:00:00Z");
+	}
+
+	/** Accepts enum names (LEAD) or export labels (Lead, Cold outreach-style spaces). */
+	static DealStage parseStage(String raw) {
+		if (raw == null || raw.isBlank()) return DealStage.LEAD;
+		String trimmed = raw.trim();
+		try {
+			return DealStage.valueOf(trimmed.toUpperCase(Locale.ROOT).replace(' ', '_'));
+		} catch (IllegalArgumentException ignored) {
+			String compact = trimmed.toLowerCase(Locale.ROOT).replaceAll("[^a-z]", "");
+			for (DealStage stage : DealStage.values()) {
+				if (stage.name().toLowerCase(Locale.ROOT).equals(compact)
+						|| stage.name().replace("_", "").toLowerCase(Locale.ROOT).equals(compact)) {
+					return stage;
+				}
+				String label = switch (stage) {
+					case LEAD -> "lead";
+					case QUALIFIED -> "qualified";
+					case PROPOSAL -> "proposal";
+					case NEGOTIATION -> "negotiation";
+					case WON -> "won";
+					case LOST -> "lost";
+				};
+				if (label.equals(compact)) return stage;
+			}
+			throw new AppException("Unknown deal stage: " + raw, HttpStatus.BAD_REQUEST);
+		}
+	}
+
+	private static String first(Map<String, Object> row, String... keys) {
+		Object v = firstObj(row, keys);
+		return v == null ? null : String.valueOf(v);
+	}
+
+	private static Object firstObj(Map<String, Object> row, String... keys) {
+		for (String key : keys) {
+			if (row.containsKey(key) && row.get(key) != null && !String.valueOf(row.get(key)).isBlank()) {
+				return row.get(key);
+			}
+		}
+		return null;
 	}
 
 	private static BigDecimal asDecimal(Object v, BigDecimal def) {

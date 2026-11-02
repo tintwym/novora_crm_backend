@@ -39,6 +39,9 @@ public class Activity {
 	@Column(name = "completed_at")
 	private Instant completedAt;
 
+	@Column(name = "reminder_email_sent_at")
+	private Instant reminderEmailSentAt;
+
 	@Column(nullable = false)
 	private Instant date;
 
@@ -127,6 +130,14 @@ public class Activity {
 
 	public void setCompletedAt(Instant completedAt) {
 		this.completedAt = completedAt;
+	}
+
+	public Instant getReminderEmailSentAt() {
+		return reminderEmailSentAt;
+	}
+
+	public void setReminderEmailSentAt(Instant reminderEmailSentAt) {
+		this.reminderEmailSentAt = reminderEmailSentAt;
 	}
 
 	public Instant getDate() {

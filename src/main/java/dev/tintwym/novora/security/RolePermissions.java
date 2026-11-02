@@ -15,9 +15,9 @@ public final class RolePermissions {
 		MATRIX.put(Role.SUPER_ADMIN, EnumSet.allOf(Permission.class));
 		MATRIX.put(Role.ADMIN, EnumSet.of(
 				Permission.MANAGE_USERS, Permission.VIEW_USERS,
-				Permission.MANAGE_COMPANIES, Permission.VIEW_COMPANIES,
+				Permission.MANAGE_COMPANIES, Permission.VIEW_COMPANIES, Permission.IMPORT_COMPANIES,
 				Permission.MANAGE_CONTACTS, Permission.VIEW_CONTACTS, Permission.IMPORT_CONTACTS,
-				Permission.MANAGE_DEALS, Permission.VIEW_DEALS, Permission.VIEW_ALL_DEALS, Permission.FORECAST_DEALS,
+				Permission.MANAGE_DEALS, Permission.VIEW_DEALS, Permission.IMPORT_DEALS, Permission.VIEW_ALL_DEALS, Permission.FORECAST_DEALS,
 				Permission.MANAGE_QUOTES, Permission.VIEW_QUOTES,
 				Permission.MANAGE_TICKETS, Permission.VIEW_TICKETS, Permission.VIEW_ALL_TICKETS,
 				Permission.MANAGE_CAMPAIGNS, Permission.VIEW_CAMPAIGNS,
@@ -26,17 +26,17 @@ public final class RolePermissions {
 				Permission.VIEW_REPORTS, Permission.VIEW_DASHBOARD));
 		MATRIX.put(Role.SALES_MANAGER, EnumSet.of(
 				Permission.VIEW_USERS,
-				Permission.VIEW_COMPANIES, Permission.MANAGE_COMPANIES,
+				Permission.VIEW_COMPANIES, Permission.MANAGE_COMPANIES, Permission.IMPORT_COMPANIES,
 				Permission.MANAGE_CONTACTS, Permission.VIEW_CONTACTS, Permission.IMPORT_CONTACTS,
-				Permission.MANAGE_DEALS, Permission.VIEW_DEALS, Permission.VIEW_ALL_DEALS, Permission.FORECAST_DEALS,
+				Permission.MANAGE_DEALS, Permission.VIEW_DEALS, Permission.IMPORT_DEALS, Permission.VIEW_ALL_DEALS, Permission.FORECAST_DEALS,
 				Permission.MANAGE_QUOTES, Permission.VIEW_QUOTES,
 				Permission.MANAGE_ACTIVITIES, Permission.VIEW_ACTIVITIES,
 				Permission.MANAGE_PRODUCTS, Permission.MANAGE_AUTOMATIONS,
 				Permission.VIEW_REPORTS, Permission.VIEW_DASHBOARD));
 		MATRIX.put(Role.SALES_REP, EnumSet.of(
-				Permission.VIEW_COMPANIES, Permission.MANAGE_COMPANIES,
+				Permission.VIEW_COMPANIES, Permission.MANAGE_COMPANIES, Permission.IMPORT_COMPANIES,
 				Permission.VIEW_CONTACTS, Permission.MANAGE_CONTACTS, Permission.IMPORT_CONTACTS,
-				Permission.MANAGE_DEALS, Permission.VIEW_DEALS,
+				Permission.MANAGE_DEALS, Permission.VIEW_DEALS, Permission.IMPORT_DEALS,
 				Permission.MANAGE_QUOTES, Permission.VIEW_QUOTES,
 				Permission.MANAGE_ACTIVITIES, Permission.VIEW_ACTIVITIES,
 				Permission.VIEW_DASHBOARD));
